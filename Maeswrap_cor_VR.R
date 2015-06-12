@@ -21,7 +21,7 @@ PlotstandVR <- function (treesfile = "trees.dat", strfile = "str.dat", confile='
         crowncolors <- rep("forestgreen", notrees)
     }
     if (targethighlight) {
-        if (MulticolorS==FALSE){      # pour integrer plusieurs couleur par espèce
+        if (MulticolorS==FALSE){      # pour integrer plusieurs couleur par esp?ce
             crowncolors <- rep("forestgreen", notrees)
             itargets <- readPAR(confile, "itargets", "treescon",
                                 fail = FALSE)
@@ -146,7 +146,7 @@ PlotstandVR <- function (treesfile = "trees.dat", strfile = "str.dat", confile='
         par3d(cex = axiscex)
         axes3d(c("x-", "y-"))
         par3d(cex = labcex)
-        title3d(xlab = "Distance (m)", ylab = NULL, main=Title) #modifié pour rajouter un titre
+        title3d(xlab = "Distance (m)", ylab = NULL, main=Title) #modifi? pour rajouter un titre
         
     }
 }
@@ -286,4 +286,40 @@ replacePAR_VR= function (datfile, parname, namelist = NA, newval, noquotes = FAL
                                                                       1):N])
     }
     writeLines(dat_lines, datfile)
+}
+
+
+
+
+
+
+
+replacemetdata_VR=function (metdfr, oldmetfile = "met.dat", columns = NA, newmetfile = "met.dat", 
+                            khrs = NA) 
+{
+    metlines <- readLines(oldmetfile)
+    datastart <- grep("DATA START", metlines)
+    preamble <- readLines(oldmetfile)[1:datastart]
+    if (is.na(khrs)) 
+        khrs <- readPAR("met.dat", "khrs", "metformat")
+    else replacePAR("met.dat", "khrs", "metformat", khrs)
+    startdate <- readPAR("met.dat", "startdate", "metformat")
+    startdate <- as.Date(startdate[1], "'%d/%m/%y'")
+    if (is.na(startdate)) 
+        startdate <- as.Date(startdate[1], "%d/%m/%y")
+    N <- nrow(metdfr)
+    if (N%%khrs != 0) {
+        extralines <- N%%khrs
+        metdfr <- metdfr[1:(N - extralines), ]
+    }
+    enddate <- startdate + N/khrs
+    replacePAR("met.dat", "enddate", "metformat", format(enddate, 
+                                                         "%d/%m/%y"))
+    replacePAR("met.dat", "nocolumns", "metformat", ncol(metdfr))
+    if (!is.na(columns)) 
+        replacePAR("met.dat", "columns", "metformat", columns, 
+                   noquotes = TRUE)
+    writeLines(preamble, newmetfile)
+    write.table(metdfr, newmetfile, sep = " ", row.names = FALSE, 
+                col.names = FALSE, append = TRUE)
 }
