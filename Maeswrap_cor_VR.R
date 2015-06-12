@@ -294,16 +294,27 @@ replacePAR_VR= function (datfile, parname, namelist = NA, newval, noquotes = FAL
 
 
 
-replacemetdata_VR=function (metdfr, oldmetfile = "met.dat", columns = NA, newmetfile = "met.dat", 
-                            khrs = NA) 
+replacemetdata_VR= function (metdfr, oldmetfile = "met.dat", columns = NA, newmetfile = "met.dat", 
+                             Givenkhrs = NA) 
 {
+    # Origin --------------------------------------------------------------------------------------
+    # Function: replacemetdata 
+    # Package: Maeswrap
+    # Author: Remko Duursma
+    
+    # New version ---------------------------------------------------------------------------------
+    # Author: Remi VEZY
+    # date: 12/06/2015
+    # New: bug fix-> cf. comment
+    
     metlines <- readLines(oldmetfile)
     datastart <- grep("DATA START", metlines)
     preamble <- readLines(oldmetfile)[1:datastart]
-    if (is.na(khrs)) 
-        khrs <- readPAR("met.dat", "khrs", "metformat")
-    else replacePAR("met.dat", "khrs", "metformat", khrs)
-    startdate <- readPAR("met.dat", "startdate", "metformat")
+    if (is.na(Givenkhrs)){ 
+        khrs <- readPAR(oldmetfile, "khrs", "metformat")}        #Didn't called the provided met.dat
+    # replaced the oldmetfile khrs by the new one here, no point to do that
+    # new khrs as to be writen AFTER the creation of the new met.dat
+    startdate <- readPAR(oldmetfile, "startdate", "metformat")  #Didn't called the provided met.dat
     startdate <- as.Date(startdate[1], "'%d/%m/%y'")
     if (is.na(startdate)) 
         startdate <- as.Date(startdate[1], "%d/%m/%y")
@@ -313,13 +324,14 @@ replacemetdata_VR=function (metdfr, oldmetfile = "met.dat", columns = NA, newmet
         metdfr <- metdfr[1:(N - extralines), ]
     }
     enddate <- startdate + N/khrs
-    replacePAR("met.dat", "enddate", "metformat", format(enddate, 
-                                                         "%d/%m/%y"))
-    replacePAR("met.dat", "nocolumns", "metformat", ncol(metdfr))
-    if (!is.na(columns)) 
-        replacePAR("met.dat", "columns", "metformat", columns, 
-                   noquotes = TRUE)
-    writeLines(preamble, newmetfile)
+    writeLines(preamble, newmetfile)                        #Create the new met.dat BEFORE writing
     write.table(metdfr, newmetfile, sep = " ", row.names = FALSE, 
                 col.names = FALSE, append = TRUE)
+    if (!is.na(Givenkhrs)){ replacePAR(newmetfile, "khrs", "metformat", Givenkhrs) }
+    # if the khrs was provided by the user, then write it in the newmet file.
+    replacePAR(newmetfile, "enddate", "metformat", format(enddate, "%d/%m/%y"))
+    replacePAR(newmetfile, "nocolumns", "metformat", ncol(metdfr))
+    if (!is.na(columns)) 
+        replacePAR(newmetfile, "columns", "metformat", columns, 
+                   noquotes = TRUE)
 }
