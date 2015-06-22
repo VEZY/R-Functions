@@ -335,3 +335,47 @@ replacemetdata_VR= function (metdfr, oldmetfile = "met.dat", columns = NA, newme
         replacePAR(newmetfile, "columns", "metformat", columns, 
                    noquotes = TRUE)
 }
+
+
+
+
+
+
+
+Daily_testflux= function(X, TargetVariable, Filepath, FileName, VariableTitle, maxHour=NA, writeImage=F, writeIt=F){
+    # Make raster from testflux values, then plot it and/or writes image in tiff format. 
+    minHour= min(X$HR)
+    if(is.na(maxHour)) {maxHour= max(X$HR)}
+    Rasters_Trans= vector("list", length(levels(as.factor(X$HR))))
+    if(maxHour==minHour){
+        Title = VariableTitle
+    }else{Title = bquote(Semi-Hour~N~degree~.(i)~.(VariableTitle))}
+    for (i in minHour:maxHour){
+        Results_Hour_X= cbind(x=X$X[X$HR==i], y=X$Y[X$HR==i], z=TargetVariable[X$HR==i])
+        Hour_X_plot= rasterize(Results_Hour_X[,1:2], Raster_plot, field= Results_Hour_X[,3])
+        filename= paste(FileName, i, ".tiff", sep="")
+        names(Hour_X_plot)=  paste(FileName, i, sep="")
+        
+        if (writeImage== TRUE){
+            tiff(file=file.path(Filepath, filename),  width= 1311 , height= 840, res=96)
+            plot(Hour_X_plot, main=Title, colNA="azure3", col=(terrain.colors(255)))
+            dev.off()
+        }else{plot(Hour_X_plot, main=Title, colNA="azure3", col=(terrain.colors(255)))
+        }
+        Rasters_Trans[((i-minHour)+1)]= Hour_X_plot
+        print(paste("Calcul Hour N°", i))
+    }
+    
+    if(maxHour==minHour){
+        if(writeIt==T){
+            writeRaster(Hour_X_plot, filename= file.path(Filepath,paste(FileName, ".asc", sep="")),
+                        format="ascii")
+        }
+        return(Hour_X_plot)
+    }else{
+        if(writeIt==T){writeRaster(stack(Rasters_Trans), 
+                                   filename= file.path(Filepath,paste(FileName, ".envi", sep="")),
+                                   format="ENVI")}
+        return(stack(Rasters_Trans))
+    }
+}
