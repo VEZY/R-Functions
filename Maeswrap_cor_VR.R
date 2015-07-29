@@ -379,3 +379,17 @@ Daily_testflux= function(X, TargetVariable, Filepath, FileName, VariableTitle, m
         return(stack(Rasters_Trans))
     }
 }
+
+
+round30min= function(x){
+    # Function to round POSIX time formats to the semi-hour. 
+    r= 60*30
+    H= as.integer(format(x, "%H"))
+    M= as.integer(format(x, "%M"))
+    S= as.integer(format(x, "%S"))
+    D= format(x, "%Y-%m-%d")
+    secs= 3600*H + 60*M + S
+    Results= as.POSIXct((round(secs/r)*r), origin= D, tz='GMT')
+    warning('Always verify if the output is correct. If not, it may be a time zone problem (change tz)')
+    return(Results)
+}
